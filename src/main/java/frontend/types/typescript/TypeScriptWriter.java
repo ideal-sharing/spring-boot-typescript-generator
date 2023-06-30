@@ -38,9 +38,6 @@ public class TypeScriptWriter implements TypeWriter {
     private String printNamedType(String name, NamedType t) {
         StringBuilder body = new StringBuilder();
         if(t instanceof ObjectType o) {
-            body.append("const ").append(name).append("Model = z.object({\n")
-
-
             body.append("export default interface ").append(name).append(" {\n");
             o.getFields().forEach(field ->
                     body.append("  ").append(field.getName()).append(": ").append(TypeWriter.printType(field.getType())).append(";\n"));
