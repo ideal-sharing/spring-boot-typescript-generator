@@ -94,25 +94,29 @@ public class TypeGeneratorMojo extends AbstractMojo {
                 endpoints.addAll(endPointParser.parseClass(clazz));
             }
 
-            String dirName = outputDir;
-            if(!dirName.endsWith("/")) {
-                dirName += "/";
+            String[] dirs = outputDir.split(",");
+
+            for(String dir: dirs) {
+                String dirName = dir.strip();
+                if (!dirName.endsWith("/")) {
+                    dirName += "/";
+                }
+
+                TypeWriter typeWriter = switch (frontendTypes) {
+                    case Typescript -> new TypeScriptWriter(dirName);
+                    case Zod -> new ZodWriter(dirName);
+                };
+
+                EndpointWriter endpointWriter = switch (frontendAPI) {
+                    case ReactQuery -> new ReactQueryWriter(context, dirName);
+                    case Angular -> new AngularWriter(context, dirName);
+                };
+
+                List<TypeScriptFile> files = new ArrayList<>();
+                files.addAll(typeWriter.printAllTypes(context));
+                files.addAll(endpointWriter.printAllEndPoints(endpoints));
+                files.forEach(TypeScriptFile::write);
             }
-
-            TypeWriter typeWriter = switch (frontendTypes) {
-                case Typescript -> new TypeScriptWriter(dirName);
-                case Zod -> new ZodWriter(dirName);
-            };
-
-            EndpointWriter endpointWriter = switch (frontendAPI) {
-                case ReactQuery -> new ReactQueryWriter(context, dirName);
-                case Angular -> new AngularWriter(context, dirName);
-            };
-
-            List<TypeScriptFile> files = new ArrayList<>();
-            files.addAll(typeWriter.printAllTypes(context));
-            files.addAll(endpointWriter.printAllEndPoints(endpoints));
-            files.forEach(TypeScriptFile::write);
 
         } catch (NotFoundException e) {
             throw new RuntimeException(e);
