@@ -35,10 +35,9 @@ public interface TypeWriter {
         if(t instanceof PrimitiveType p) {
             return switch (p) {
                 case Int, Double -> "number";
-                case String -> "string";
+                case String, Date -> "string";
                 case Boolean -> "boolean";
                 case Void -> "void";
-                case Date -> "Date";
             };
         }
 

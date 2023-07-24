@@ -10,6 +10,7 @@ import model.types.*;
 import org.springframework.http.HttpMethod;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class ReactQueryWriter implements EndpointWriter {
@@ -101,6 +102,11 @@ public class ReactQueryWriter implements EndpointWriter {
         method.append("(").append(formatUrl(endpoint));
         if(endpoint.getBody() != null) {
             method.append(", data");
+        } else if(!endpoint.getHttpMethod().equals(HttpMethod.DELETE)) {
+            method.append(", null");
+        }
+        if(endpoint.getParams().size() > 0) {
+            method.append(", { params: ").append(printParams(endpoint.getParams())).append(" }");
         }
         method.append(");\n");
 
@@ -136,7 +142,11 @@ public class ReactQueryWriter implements EndpointWriter {
         method.append("async (");
         method.append(") => {\n");
         method.append("      const response = await axios.").append(endpoint.getHttpMethod().name().toLowerCase()).append(returnType);
-        method.append("(").append(formatUrl(endpoint)).append(");\n");
+        method.append("(").append(formatUrl(endpoint));
+        if(endpoint.getParams().size() > 0) {
+            method.append(", { params: ").append(printParams(endpoint.getParams())).append(" }");
+        }
+        method.append(");\n");
         method.append("      return response.data;\n");
         method.append("    }, options),\n");
         method.append("  };\n\n");
@@ -150,12 +160,7 @@ public class ReactQueryWriter implements EndpointWriter {
             url = url.replace("{" + urlArg.getName() + "}", "${" + urlArg.getName() + "}");
         }
 
-        List<String> urlParams = endpoint.getParams().stream().map(field -> field.getName() + "=${" + field.getName() +"}").toList();
-        if(urlParams.size() > 0) {
-            url += "?" + String.join("&", urlParams);
-        }
-
-        if(endpoint.getUrlArgs().size() > 0 || endpoint.getParams().size() > 0) {
+        if(endpoint.getUrlArgs().size() > 0) {
             return "`" + url + "`";
         } else {
             return "'" + url + "'";
@@ -166,12 +171,24 @@ public class ReactQueryWriter implements EndpointWriter {
     private String getFnParams(List<Field> fields) {
         List<String> params = new ArrayList<>();
         fields.forEach(field ->
-                params.add(field.getName() + ": " + TypeWriter.printType(field.getType()))
+                params.add(field.getName() + (field.isRequired() ? "" : "?") + ": " + TypeWriter.printType(field.getType()))
         );
 
         return String.join(", ", params);
     }
 
+    private String printParams(List<Field> fields) {
+        String s = "{";
+        s += fields.stream().map(field -> {
+            if(field.getType() instanceof ObjectType) {
+                return "..." + field.getName();
+            } else {
+                return field.getName();
+            }
+        }).collect(Collectors.joining(", "));
+        s += "}";
+        return s;
+    }
 
     private String getCollectionName(Type type) {
         if(type instanceof ArrayType arr) {

@@ -35,12 +35,44 @@ public class TypeScriptWriter implements TypeWriter {
         return files;
     }
 
+    public List<TypeScriptFile> printAllNonValidatedTypes(TypeContext context) {
+        List<TypeScriptFile> files = new ArrayList<>();
+
+        context.getNamedObjects().forEach((name, namedType) -> {
+            if(!namedType.needsValidation() && !(namedType instanceof EnumType)) {
+                TypeScriptFile typeScriptFile = new TypeScriptFile();
+                typeScriptFile.setLocation(basePath + TYPE_DECLARATIONS_DIR + "/" + name);
+                typeScriptFile.setBody(printNamedType(name, namedType));
+                files.add(typeScriptFile);
+                context.getNamedObjectFiles().put(name, typeScriptFile);
+            }
+        });
+
+        // resolving imports:
+        context.getNamedObjects().forEach((name, namedType) -> {
+            if(!namedType.needsValidation() && !(namedType instanceof EnumType)) {
+                if (namedType instanceof ObjectType objectType) {
+                    TypeScriptFile file = context.getNamedObjectFiles().get(name);
+                    objectType.getFields().forEach(field -> file.addImport(field.getType(), context));
+                }
+
+            }
+        });
+
+        return files;
+    }
+
     private String printNamedType(String name, NamedType t) {
         StringBuilder body = new StringBuilder();
         if(t instanceof ObjectType o) {
             body.append("export default interface ").append(name).append(" {\n");
-            o.getFields().forEach(field ->
-                    body.append("  ").append(field.getName()).append(": ").append(TypeWriter.printType(field.getType())).append(";\n"));
+            o.getFields().forEach(field -> {
+                body.append("  ").append(field.getName());
+                if(!field.isRequired()) {
+                    body.append("?");
+                }
+                body.append(": ").append(TypeWriter.printType(field.getType())).append(";\n");
+            });
             body.append("}\n");
         } else if (t instanceof EnumType e) {
             body.append("enum ").append(name).append(" {\n");

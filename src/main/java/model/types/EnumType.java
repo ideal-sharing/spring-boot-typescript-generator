@@ -12,4 +12,11 @@ public class EnumType implements NamedType {
     @NonNull
     private String name;
     private List<String> values = new ArrayList<>();
+
+    private boolean needsValidation;
+
+    @Override
+    public boolean needsValidation() {
+        return needsValidation;
+    }
 }

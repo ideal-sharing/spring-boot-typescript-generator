@@ -9,6 +9,11 @@ import javassist.Modifier;
 import lombok.SneakyThrows;
 import model.TypeContext;
 import model.types.*;
+import model.validation.Arrays;
+import model.validation.Numbers;
+import model.validation.Strings;
+import model.validation.Validation;
+import org.springframework.lang.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -157,41 +162,62 @@ public class SpringTypeParser implements TypeParser {
             EnumType enumType = new EnumType(ctClass.getSimpleName());
             context.getNamedObjects().put(ctClass.getSimpleName(), enumType);
             for (CtField field : ctClass.getFields()) {
-                enumType.getValues().add(field.getName());
+                if(field.getType().getName().equals(ctClass.getName())) {
+                    enumType.getValues().add(field.getName());
+                }
             }
             return enumType;
         }
 
         ObjectType objectType = new ObjectType(ctClass.getSimpleName());
         context.getNamedObjects().put(ctClass.getSimpleName(), objectType);
-        for(CtField field: ctClass.getFields()) {
+        for(CtField field: ctClass.getDeclaredFields()) {
             if(field.getAnnotation(JsonIgnore.class) != null) {
                 continue;
             }
             if((field.getModifiers() & Modifier.STATIC) != 0) {
                 continue;
             }
-            objectType.getFields().add(new Field(field.getName(), parseType(field)));
+            Field f = new Field(field.getName(), parseType(field));
+            f.setRequired(!field.hasAnnotation(Nullable.class));
+            f.getValidations().addAll(getNeededValidation(field));
+            objectType.getFields().add(f);
         }
 
-        for(CtMethod ctMethod: ctClass.getMethods()) {
-            if((ctMethod.getModifiers() & Modifier.PUBLIC) == 0) {
-                continue;
-            }
-
-            if(ctMethod.getDeclaringClass().getName().equals(Object.class.getName())) {
-                continue;
-            }
-
-            String name = ctMethod.getName();
-            if((name.startsWith("get") || name.startsWith("is")) && ctMethod.getParameterTypes().length == 0) {
-                String fieldName = name.replaceAll("^get", "")
-                        .replaceAll("^is", "");
-
-                fieldName = Character.toLowerCase(fieldName.charAt(0)) + fieldName.substring(1);
-                objectType.getFields().add(new Field(fieldName, parseType(ctMethod)));
-            }
+        if (!ctClass.getSuperclass().getName().equals(Object.class.getName())) {
+            ObjectType o = (ObjectType) parseObject(ctClass.getSuperclass());
+            objectType.getFields().addAll(o.getFields());
         }
         return objectType;
+    }
+
+    @SneakyThrows
+    private List<Validation> getNeededValidation(CtField ctField) {
+        List<Validation> validations = new ArrayList<>();
+
+        for (Object annotation : ctField.getAvailableAnnotations()) {
+            if(annotation instanceof jakarta.validation.constraints.Min ann) {
+                validations.add(new Numbers.MinValue(ann.value(), ann.message()));
+            }
+            if(annotation instanceof jakarta.validation.constraints.Max ann) {
+                validations.add(new Numbers.MaxValue(ann.value(), ann.message()));
+            }
+            if(annotation instanceof jakarta.validation.constraints.Size ann) {
+                if(ann.min() != Integer.MIN_VALUE) {
+                    validations.add(new Arrays.MinLength(ann.min(), ann.message()));
+                }
+
+                if(ann.max() != Integer.MAX_VALUE) {
+                    validations.add(new Arrays.MaxLength(ann.max(), ann.message()));
+                }
+            }
+            if(annotation instanceof jakarta.validation.constraints.NotBlank ann) {
+                validations.add(new Strings.Regex("/^(?!\\s*$).+/", ann.message()));
+            }
+            if(annotation instanceof jakarta.validation.constraints.Pattern ann) {
+                validations.add(new Strings.Regex("/" + ann.regexp() + "/", ann.message()));
+            }
+        }
+        return validations;
     }
 }

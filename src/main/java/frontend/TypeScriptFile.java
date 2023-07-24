@@ -13,10 +13,7 @@ import model.types.Type;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Data
 public class TypeScriptFile {
@@ -31,7 +28,7 @@ public class TypeScriptFile {
     public static class Import {
         private String location;
         private String defaultImport;
-        private Set<String> imports;
+        private Set<String> imports = new HashSet<>();
 
         public String toString() {
             StringBuilder imp = new StringBuilder("import ");

@@ -9,18 +9,23 @@ import lombok.SneakyThrows;
 import model.TypeContext;
 import model.Endpoint;
 import backend.TypeParser;
-import model.types.Field;
-import model.types.Intermediate;
+import model.types.*;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class SpringEndpointParser implements EndPointParser {
     private final TypeParser typeParser;
 
     private final TypeContext context;
+
+    private static final Set<String> IGONRED_ENDPOINT_PARAMS = Set.of(
+            "org.springframework.web.server.ServerWebExchange",
+            "org.springframework.web.server.WebSession"
+    );
 
     public SpringEndpointParser(TypeContext context) {
         this.typeParser = new SpringTypeParser(context);
@@ -120,22 +125,44 @@ public class SpringEndpointParser implements EndPointParser {
             int nameIndex = table.nameIndex(i + 1);
             String variableName = methodInfo.getConstPool().getUtf8Info(nameIndex);
 
+            if(method.getParameterAnnotations()[i].length == 0 && !IGONRED_ENDPOINT_PARAMS.contains(method.getParameterTypes()[i].getName())){
+                endpoint.getParams().add(new Field(variableName, typeParser.parseType(argTypes.get(i))));
+            }
+
             for(Object annotation: method.getParameterAnnotations()[i]) {
                 if(annotation instanceof RequestParam requestParam) {
                     Field field = new Field(variableName, typeParser.parseType(argTypes.get(i)));
                     field.setRequired(requestParam.required());
                     endpoint.getParams().add(field);
-                }
-
-                if(annotation instanceof PathVariable) {
+                } else if(annotation instanceof PathVariable) {
                     endpoint.getUrlArgs().add(new Field(variableName, typeParser.parseType(argTypes.get(i))));
-                }
-
-                if(annotation instanceof RequestBody) {
+                } else if(annotation instanceof RequestBody) {
                     endpoint.setBody(typeParser.parseType(argTypes.get(i)));
+                    setNeedsValidation(endpoint.getBody());
                 }
             }
         }
+    }
 
+    private void setNeedsValidation(Type type) {
+
+        if(type instanceof ObjectType o) {
+            o.setNeedsValidation(true);
+            o.getFields().forEach(field -> setNeedsValidation(field.getType()));
+        }
+
+        if(type instanceof EnumType e) {
+            e.setNeedsValidation(true);
+        }
+
+        if(type instanceof ArrayType arr) {
+            setNeedsValidation(arr.getSubType());
+        }
+
+        if(type instanceof MapType map) {
+            setNeedsValidation(map.getKeySubType());
+            setNeedsValidation(map.getValueSubType());
+        }
     }
 }
+

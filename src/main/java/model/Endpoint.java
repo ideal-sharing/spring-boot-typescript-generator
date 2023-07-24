@@ -29,7 +29,7 @@ public class Endpoint {
           List<Field> params = new ArrayList<>();
           params.addAll(getUrlArgs());
           params.addAll(getParams());
-          return params.stream().sorted(Comparator.comparing(Field::isRequired, Boolean::compareTo).thenComparing(Field::getName)).toList();
+          return params.stream().sorted(Comparator.comparing(Field::isRequired, Boolean::compareTo).reversed().thenComparing(Field::getName)).toList();
      }
 
      @NonNull

@@ -11,4 +11,11 @@ public class ObjectType implements NamedType {
     private String name;
     @ToString.Exclude
     private List<Field> fields = new ArrayList<>();
+
+    private boolean needsValidation;
+
+    @Override
+    public boolean needsValidation() {
+        return needsValidation;
+    }
 }
