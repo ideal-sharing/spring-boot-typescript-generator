@@ -60,7 +60,7 @@ public class ZodWriter implements TypeWriter {
                 body.append("  ").append(field.getName()).append(": ").append(printZodType(field.getType()));
                 field.getValidations().forEach(validation -> body.append(printValidation(validation)));
                 if(!field.isRequired()) {
-                    body.append(".optional()");
+                    body.append(".optional().nullable()");
                 }
                 body.append(",\n");
             });
