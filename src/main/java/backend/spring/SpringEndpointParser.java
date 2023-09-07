@@ -70,41 +70,46 @@ public class SpringEndpointParser implements EndPointParser {
 
         if(getMapping != null) {
             for (String path : getMapping.value()) {
-                Endpoint endpoint = new Endpoint(className, method.getName(), prefix + path, HttpMethod.GET, typeParser.parseType(method));
-                parseArgs(method, endpoint);
-                endpoints.add(endpoint);
+                endpoints.add(endpoint(method, prefix, HttpMethod.GET, className, path));
+            }
+            if (getMapping.value().length == 0) {
+                endpoints.add(endpoint(method, prefix, HttpMethod.GET, className, null));
             }
         }
 
         if(postMapping != null) {
             for (String path : postMapping.value()) {
-                Endpoint endpoint = new Endpoint(className, method.getName(), prefix + path, HttpMethod.POST, typeParser.parseType(method));
-                parseArgs(method, endpoint);
-                endpoints.add(endpoint);
+                endpoints.add(endpoint(method, prefix, HttpMethod.POST, className, path));
+            }
+            if (postMapping.value().length == 0) {
+                endpoints.add(endpoint(method, prefix, HttpMethod.POST, className, null));
             }
         }
 
         if(putMapping != null) {
             for (String path : putMapping.value()) {
-                Endpoint endpoint = new Endpoint(className, method.getName(), prefix + path, HttpMethod.PUT, typeParser.parseType(method));
-                parseArgs(method, endpoint);
-                endpoints.add(endpoint);
+                endpoints.add(endpoint(method, prefix, HttpMethod.PUT, className, path));
+            }
+            if (putMapping.value().length == 0) {
+                endpoints.add(endpoint(method, prefix, HttpMethod.PUT, className, null));
             }
         }
 
         if(patchMapping != null) {
             for (String path : patchMapping.value()) {
-                Endpoint endpoint = new Endpoint(className, method.getName(), prefix + path, HttpMethod.PATCH, typeParser.parseType(method));
-                parseArgs(method, endpoint);
-                endpoints.add(endpoint);
+                endpoints.add(endpoint(method, prefix, HttpMethod.PATCH, className, path));
+            }
+            if (patchMapping.value().length == 0) {
+                endpoints.add(endpoint(method, prefix, HttpMethod.PATCH, className, null));
             }
         }
 
         if(deleteMapping != null) {
             for (String path : deleteMapping.value()) {
-                Endpoint endpoint = new Endpoint(className, method.getName(), prefix + path, HttpMethod.DELETE, typeParser.parseType(method));
-                parseArgs(method, endpoint);
-                endpoints.add(endpoint);
+                endpoints.add(endpoint(method, prefix, HttpMethod.DELETE, className, path));
+            }
+            if (deleteMapping.value().length == 0) {
+                endpoints.add(endpoint(method, prefix, HttpMethod.DELETE, className, null));
             }
         }
     }
@@ -165,6 +170,13 @@ public class SpringEndpointParser implements EndPointParser {
             setNeedsValidation(map.getKeySubType());
             setNeedsValidation(map.getValueSubType());
         }
+    }
+
+    private Endpoint endpoint(CtMethod method, String prefix, HttpMethod httpMethod, String className, String path) {
+        String url = prefix + (path != null ? path : "");
+        Endpoint endpoint = new Endpoint(className, method.getName(), url, httpMethod, typeParser.parseType(method));
+        parseArgs(method, endpoint);
+        return endpoint;
     }
 }
 
