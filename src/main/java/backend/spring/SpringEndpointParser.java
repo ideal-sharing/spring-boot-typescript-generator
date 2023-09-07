@@ -24,7 +24,9 @@ public class SpringEndpointParser implements EndPointParser {
 
     private static final Set<String> IGONRED_ENDPOINT_PARAMS = Set.of(
             "org.springframework.web.server.ServerWebExchange",
-            "org.springframework.web.server.WebSession"
+            "org.springframework.web.server.WebSession",
+            "jakarta.servlet.http.HttpServletRequest",
+            "jakarta.servlet.http.HttpServletResponse"
     );
 
     public SpringEndpointParser(TypeContext context) {
@@ -109,9 +111,9 @@ public class SpringEndpointParser implements EndPointParser {
 
     @SneakyThrows
     public void parseArgs(CtMethod method, Endpoint endpoint) {
-        String args = method.getGenericSignature().replaceFirst("\\).*$", ")").replace(")", "").replace("(", "");
-        String returnTypeStr = method.getGenericSignature().replaceFirst("\\(.*\\)", "");
-
+        String signature = method.getGenericSignature() == null ? method.getSignature() : method.getGenericSignature();
+        String args = signature.replaceFirst("\\).*$", ")").replace(")", "").replace("(", "");
+        String returnTypeStr = signature.replaceFirst("\\(.*\\)", "");
         GenericTypeStringParser argsParser = new GenericTypeStringParser(args, context);
         GenericTypeStringParser returnParser = new GenericTypeStringParser(returnTypeStr, context);
         List<Intermediate> argTypes = argsParser.parseGenericArgs();

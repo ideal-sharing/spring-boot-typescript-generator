@@ -19,7 +19,7 @@ public class TypeScriptWriter implements TypeWriter {
         context.getNamedObjects().forEach((name, objectType) -> {
             TypeScriptFile typeScriptFile = new TypeScriptFile();
             typeScriptFile.setLocation(basePath + TYPE_DECLARATIONS_DIR + "/" + name);
-            typeScriptFile.setBody(printNamedType(name, objectType));
+            typeScriptFile.setBody(printNamedType(name, objectType, context));
             files.add(typeScriptFile);
             context.getNamedObjectFiles().put(name, typeScriptFile);
         });
@@ -42,7 +42,7 @@ public class TypeScriptWriter implements TypeWriter {
             if(!namedType.needsValidation() && !(namedType instanceof EnumType)) {
                 TypeScriptFile typeScriptFile = new TypeScriptFile();
                 typeScriptFile.setLocation(basePath + TYPE_DECLARATIONS_DIR + "/" + name);
-                typeScriptFile.setBody(printNamedType(name, namedType));
+                typeScriptFile.setBody(printNamedType(name, namedType, context));
                 files.add(typeScriptFile);
                 context.getNamedObjectFiles().put(name, typeScriptFile);
             }
@@ -62,7 +62,7 @@ public class TypeScriptWriter implements TypeWriter {
         return files;
     }
 
-    private String printNamedType(String name, NamedType t) {
+    private String printNamedType(String name, NamedType t, TypeContext context) {
         StringBuilder body = new StringBuilder();
         if(t instanceof ObjectType o) {
             body.append("export default interface ").append(name).append(" {\n");
@@ -71,7 +71,7 @@ public class TypeScriptWriter implements TypeWriter {
                 if(!field.isRequired()) {
                     body.append("?");
                 }
-                body.append(": ").append(TypeWriter.printType(field.getType())).append(";\n");
+                body.append(": ").append(TypeWriter.printType(field.getType(), context)).append(";\n");
             });
             body.append("}\n");
         } else if (t instanceof EnumType e) {

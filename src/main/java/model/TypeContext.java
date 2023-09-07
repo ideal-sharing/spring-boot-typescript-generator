@@ -16,4 +16,5 @@ public class TypeContext {
 
     private final Map<String, TypeScriptFile> namedObjectFiles = new HashMap<>();
 
+    private final boolean useStringAsDate;
 }

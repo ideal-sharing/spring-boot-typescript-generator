@@ -66,6 +66,16 @@ public class GenericTypeStringParser {
             return new IntermediateType(loadClass("java/lang/Byte"));
         }
 
+        if (current.startsWith("Z")) {
+            current = current.substring(1);
+            return new IntermediateType(loadClass("java/lang/Boolean"));
+        }
+
+        if (current.startsWith("V")) {
+            current = current.substring(1);
+            return new IntermediateType(loadClass("java/lang/Void"));
+        }
+
         if(current.startsWith("[")) {
             current = current.substring(1);
             return new IntermediateArray(consumeNext(level));
@@ -75,6 +85,7 @@ public class GenericTypeStringParser {
             current = current.substring(1);
         }
 
+        System.out.println(current);
         int nextSubtype = current.indexOf("<");
         int nextBreak = current.indexOf(";");
 
