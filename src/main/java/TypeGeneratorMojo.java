@@ -50,7 +50,7 @@ public class TypeGeneratorMojo extends AbstractMojo {
     @Parameter(property = "frontendTypes", required = true)
     FrontendTypes frontendTypes;
 
-    @Parameter(property = "useStringAsDate")
+    @Parameter(property = "useStringAsDate", defaultValue = "false")
     boolean useStringAsDate = false;
 
 

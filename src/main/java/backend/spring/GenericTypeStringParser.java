@@ -85,7 +85,6 @@ public class GenericTypeStringParser {
             current = current.substring(1);
         }
 
-        System.out.println(current);
         int nextSubtype = current.indexOf("<");
         int nextBreak = current.indexOf(";");
 
