@@ -21,6 +21,7 @@ public class ReactQueryWriter implements EndpointWriter {
             new TypeScriptFile.Import("axios", "axios", Set.of())
     );
 
+    @Override
     public List<TypeScriptFile> printAllEndPoints(List<Endpoint> endpoints) {
         List<TypeScriptFile> files = new ArrayList<>();
 
@@ -75,7 +76,7 @@ public class ReactQueryWriter implements EndpointWriter {
 
     private String printMutation(Endpoint endpoint) {
         List<Field> sortedParams = endpoint.getAllVariables();
-        String returnType = "<" + TypeWriter.printType(endpoint.getReturnType()) + ">";
+        String returnType = "<" + TypeWriter.printType(endpoint.getReturnType(), context) + ">";
 
         String args = getFnParams(sortedParams);
         if(!args.equals("")) {
@@ -85,9 +86,9 @@ public class ReactQueryWriter implements EndpointWriter {
         String genericParams;
 
         if(endpoint.getBody() != null) {
-            genericParams = "<" + TypeWriter.printType(endpoint.getReturnType()) + ", unknown, " + TypeWriter.printType(endpoint.getBody()) + ">";
+            genericParams = "<" + TypeWriter.printType(endpoint.getReturnType(), context) + ", unknown, " + TypeWriter.printType(endpoint.getBody(), context) + ">";
         } else {
-            genericParams = "<" + TypeWriter.printType(endpoint.getReturnType()) + ">";
+            genericParams = "<" + TypeWriter.printType(endpoint.getReturnType(), context) + ">";
         }
         args += "options?: Omit<UseMutationOptions" + genericParams + ", 'mutationFn'>";
 
@@ -95,7 +96,7 @@ public class ReactQueryWriter implements EndpointWriter {
         method.append("useMutation").append(genericParams).append("(");
         method.append("async (");
         if(endpoint.getBody() != null) {
-            method.append("data: ").append(TypeWriter.printType(endpoint.getBody()));
+            method.append("data: ").append(TypeWriter.printType(endpoint.getBody(), context));
         }
         method.append( ") => {\n");
         method.append("      const response = await axios.").append(endpoint.getHttpMethod().name().toLowerCase()).append(returnType);
@@ -123,7 +124,7 @@ public class ReactQueryWriter implements EndpointWriter {
             key = endpoint.getClassName() + "_" + endpoint.getName();
         }
         List<Field> sortedParams = endpoint.getAllVariables();
-        String returnType = "<" + TypeWriter.printType(endpoint.getReturnType()) + ">";
+        String returnType = "<" + TypeWriter.printType(endpoint.getReturnType(), context) + ">";
 
         String args = getFnParams(sortedParams);
         if(!args.equals("")) {
@@ -171,7 +172,7 @@ public class ReactQueryWriter implements EndpointWriter {
     private String getFnParams(List<Field> fields) {
         List<String> params = new ArrayList<>();
         fields.forEach(field ->
-                params.add(field.getName() + (field.isRequired() ? "" : "?") + ": " + TypeWriter.printType(field.getType()))
+                params.add(field.getName() + (field.isRequired() ? "" : "?") + ": " + TypeWriter.printType(field.getType(), context))
         );
 
         return String.join(", ", params);

@@ -50,6 +50,9 @@ public class TypeGeneratorMojo extends AbstractMojo {
     @Parameter(property = "frontendTypes", required = true)
     FrontendTypes frontendTypes;
 
+    @Parameter(property = "useStringAsDate", defaultValue = "false")
+    boolean useStringAsDate = false;
+
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -81,7 +84,7 @@ public class TypeGeneratorMojo extends AbstractMojo {
                 }
             }
 
-            TypeContext context = new TypeContext(classPool);
+            TypeContext context = new TypeContext(classPool, useStringAsDate);
 
             EndPointParser endPointParser = switch (backend) {
                 case Spring -> new SpringEndpointParser(context);
