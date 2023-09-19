@@ -75,12 +75,14 @@ public class TypeScriptWriter implements TypeWriter {
             });
             body.append("}\n");
         } else if (t instanceof EnumType e) {
-            body.append("enum ").append(name).append(" {\n");
-            e.getValues().forEach(s ->
-                    body.append("  ").append(s).append(" = '").append(s).append("',\n")
-            );
-            body.append("}\n");
-            body.append("export default ").append(name).append(";\n");
+            body.append("type ").append(name).append(" = ");
+            for (int i = 0; i < e.getValues().size(); i++) {
+                if (i != 0) {
+                    body.append(" | ");
+                }
+                body.append("'").append(e.getValues().get(i)).append("'");
+            }
+            body.append(";\nexport default ").append(name).append(";\n");
         }
         return body.toString();
     }
