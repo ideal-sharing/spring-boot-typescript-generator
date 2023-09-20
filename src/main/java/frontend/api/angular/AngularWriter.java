@@ -7,8 +7,6 @@ import lombok.RequiredArgsConstructor;
 import model.Endpoint;
 import model.TypeContext;
 import model.types.Field;
-import model.types.Type;
-
 import java.util.*;
 
 @RequiredArgsConstructor
@@ -18,9 +16,10 @@ public class AngularWriter implements EndpointWriter {
     private final String basePath;
 
     private final List<TypeScriptFile.Import> defaultImports = List.of(
-            new TypeScriptFile.Import("@angular/core", "{ Injectable }", Set.of()),
-            new TypeScriptFile.Import("rxjs", "{ Observable }", Set.of()),
-            new TypeScriptFile.Import("../../../environments/environment", "{ environment }", Set.of())
+            new TypeScriptFile.Import("@angular/core", null, Set.of("Injectable")),
+            new TypeScriptFile.Import("rxjs", null, Set.of("Observable")),
+            // TODO remove in the future
+            new TypeScriptFile.Import("../../../environments/environment", null, Set.of("environment"))
     );
 
     @Override
@@ -37,9 +36,9 @@ public class AngularWriter implements EndpointWriter {
             TypeScriptFile typeScriptFile = new TypeScriptFile();
             typeScriptFile.getImports().addAll(defaultImports);
             if (classEndpoints.stream().filter(endpoint -> !endpoint.getParams().isEmpty()).toList().isEmpty()) {
-                typeScriptFile.getImports().add(new TypeScriptFile.Import("@angular/common/http", "{ HttpClient }", Set.of()));
+                typeScriptFile.getImports().add(new TypeScriptFile.Import("@angular/common/http", null, Set.of("HttpClient")));
             } else {
-                typeScriptFile.getImports().add(new TypeScriptFile.Import("@angular/common/http", "{ HttpClient, HttpParams }", Set.of()));
+                typeScriptFile.getImports().add(new TypeScriptFile.Import("@angular/common/http", null, Set.of("HttpClient", "HttpParams")));
             }
             typeScriptFile.setLocation(basePath + ENDPOINTS_DIR + "/" + (className.replace("Controller", ".service").toLowerCase()));
 
