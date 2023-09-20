@@ -82,7 +82,16 @@ public class TypeScriptWriter implements TypeWriter {
                 }
                 body.append("'").append(e.getValues().get(i)).append("'");
             }
-            body.append(";\nexport default ").append(name).append(";\n");
+            String first = String.valueOf(name.charAt(0));
+            body.append(";\nexport const ").append(first.toLowerCase()).append(name.substring(1))
+                    .append("Values: ").append(name).append("[] = [");
+            for (int i = 0; i < e.getValues().size(); i++) {
+                if (i != 0) {
+                    body.append(", ");
+                }
+                body.append("'").append(e.getValues().get(i)).append("'");
+            }
+            body.append("];\nexport default ").append(name).append(";\n");
         }
         return body.toString();
     }
