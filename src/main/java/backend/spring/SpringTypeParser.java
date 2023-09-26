@@ -184,7 +184,7 @@ public class SpringTypeParser implements TypeParser {
             objectType.getFields().add(f);
         }
 
-        if (!ctClass.getSuperclass().getName().equals(Object.class.getName())) {
+        if (ctClass.getSuperclass() != null && !ctClass.getSuperclass().getName().equals(Object.class.getName())) {
             ObjectType o = (ObjectType) parseObject(ctClass.getSuperclass());
             objectType.getFields().addAll(o.getFields());
         }
