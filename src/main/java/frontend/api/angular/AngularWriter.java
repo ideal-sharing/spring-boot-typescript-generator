@@ -88,7 +88,11 @@ public class AngularWriter implements EndpointWriter {
                     body.append("        let params = new HttpParams();\n");
                     for (Field param : endpoint.getParams()) {
                         if (!param.getType().toString().contains("ObjectType")) {
-                            body.append("        params = params.append('").append(param.getName()).append("', ").append(param.getName()).append(");\n");
+                            if (param.isRequired()) {
+                                body.append("        params = params.append('").append(param.getName()).append("', ").append(param.getName()).append(");\n");
+                            } else {
+                                body.append("        if (").append(param.getName()).append(") {\n            params = params.append('").append(param.getName()).append("', ").append(param.getName()).append(");\n        }\n");
+                            }
                         }
                     }
                 }

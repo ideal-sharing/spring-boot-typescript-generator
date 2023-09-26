@@ -154,13 +154,15 @@ public class SpringTypeParser implements TypeParser {
 
     @SneakyThrows
     private NamedType parseObject(CtClass ctClass) {
-        if(context.getNamedObjects().containsKey(ctClass.getSimpleName())) {
-            return context.getNamedObjects().get(ctClass.getSimpleName());
+        String simpleName = ctClass.getSimpleName();
+        simpleName = simpleName.replace("$", "");
+        if(context.getNamedObjects().containsKey(simpleName)) {
+            return context.getNamedObjects().get(simpleName);
         }
 
         if(ctClass.isEnum()) {
-            EnumType enumType = new EnumType(ctClass.getSimpleName());
-            context.getNamedObjects().put(ctClass.getSimpleName(), enumType);
+            EnumType enumType = new EnumType(simpleName);
+            context.getNamedObjects().put(simpleName, enumType);
             for (CtField field : ctClass.getFields()) {
                 if(field.getType().getName().equals(ctClass.getName())) {
                     enumType.getValues().add(field.getName());
@@ -169,8 +171,8 @@ public class SpringTypeParser implements TypeParser {
             return enumType;
         }
 
-        ObjectType objectType = new ObjectType(ctClass.getSimpleName());
-        context.getNamedObjects().put(ctClass.getSimpleName(), objectType);
+        ObjectType objectType = new ObjectType(simpleName);
+        context.getNamedObjects().put(simpleName, objectType);
         for(CtField field: ctClass.getDeclaredFields()) {
             if(field.getAnnotation(JsonIgnore.class) != null) {
                 continue;
