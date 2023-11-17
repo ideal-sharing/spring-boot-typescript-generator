@@ -79,7 +79,7 @@ public class ReactQueryWriter implements EndpointWriter {
         String returnType = "<" + TypeWriter.printType(endpoint.getReturnType(), context) + ">";
 
         String args = getFnParams(sortedParams);
-        if(!args.equals("")) {
+        if(!args.isEmpty()) {
             args += ", ";
         }
 
@@ -106,7 +106,7 @@ public class ReactQueryWriter implements EndpointWriter {
         } else if(!endpoint.getHttpMethod().equals(HttpMethod.DELETE)) {
             method.append(", null");
         }
-        if(endpoint.getParams().size() > 0) {
+        if(!endpoint.getParams().isEmpty()) {
             method.append(", { params: ").append(printParams(endpoint.getParams())).append(" }");
         }
         method.append(");\n");
@@ -118,16 +118,12 @@ public class ReactQueryWriter implements EndpointWriter {
     }
 
     private String printQuery(Endpoint endpoint) {
-        String key = getCollectionName(endpoint.getReturnType());
-
-        if(key.equals("")) {
-            key = endpoint.getClassName() + "_" + endpoint.getName();
-        }
+        String key = endpoint.getClassName() + "_" + endpoint.getName();
         List<Field> sortedParams = endpoint.getAllVariables();
         String returnType = "<" + TypeWriter.printType(endpoint.getReturnType(), context) + ">";
 
         String args = getFnParams(sortedParams);
-        if(!args.equals("")) {
+        if(!args.isEmpty()) {
             args += ", ";
         }
         args += "options?: Omit<Omit<UseQueryOptions" + returnType + ", 'queryKey'>, 'queryFn'>";
@@ -135,7 +131,7 @@ public class ReactQueryWriter implements EndpointWriter {
         StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n    useQuery: (" + args + ") => useQuery" + returnType + "(");
 
         method.append("['").append(key).append("'");
-        if(sortedParams.size() > 0) {
+        if(!sortedParams.isEmpty()) {
             method.append(", ").append(String.join(", ", sortedParams.stream().map(Field::getName).toList()));
         }
         method.append("], ");
@@ -144,7 +140,7 @@ public class ReactQueryWriter implements EndpointWriter {
         method.append(") => {\n");
         method.append("      const response = await axios.").append(endpoint.getHttpMethod().name().toLowerCase()).append(returnType);
         method.append("(").append(formatUrl(endpoint));
-        if(endpoint.getParams().size() > 0) {
+        if(!endpoint.getParams().isEmpty()) {
             method.append(", { params: ").append(printParams(endpoint.getParams())).append(" }");
         }
         method.append(");\n");
@@ -161,7 +157,7 @@ public class ReactQueryWriter implements EndpointWriter {
             url = url.replace("{" + urlArg.getName() + "}", "${" + urlArg.getName() + "}");
         }
 
-        if(endpoint.getUrlArgs().size() > 0) {
+        if(!endpoint.getUrlArgs().isEmpty()) {
             return "`" + url + "`";
         } else {
             return "'" + url + "'";
@@ -197,7 +193,7 @@ public class ReactQueryWriter implements EndpointWriter {
         }
 
         if(type instanceof NamedType named) {
-            return  named.getName();
+            return named.getName();
         }
 
         return "";
