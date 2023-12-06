@@ -40,7 +40,14 @@ public class AngularWriter implements EndpointWriter {
             } else {
                 typeScriptFile.getImports().add(new TypeScriptFile.Import("@angular/common/http", null, Set.of("HttpClient", "HttpParams")));
             }
-            typeScriptFile.setLocation(basePath + ENDPOINTS_DIR + "/" + (className.replace("Controller", ".service").toLowerCase()));
+
+            String fileName = (className.replace("Controller", ".service"));
+            for (int i = 0; i < fileName.length(); i++) {
+                if (i != 0 && Character.isUpperCase(fileName.charAt(i))) {
+                    fileName = fileName.substring(0, i) + "-" + Character.toLowerCase(fileName.charAt(i)) + fileName.substring(i+1);
+                }
+            }
+            typeScriptFile.setLocation(basePath + ENDPOINTS_DIR + "/" + fileName.toLowerCase());
 
             StringBuilder body = new StringBuilder();
             body.append("const headers = { 'content-type': 'application/json' };\n\n").append("@Injectable({\n    providedIn: 'root',\n})\nexport class ").append(className.replace("Controller", "Service")).append(" {\n").append("    baseURL = environment.serverUrl;\n\n");
@@ -54,7 +61,7 @@ public class AngularWriter implements EndpointWriter {
                 body.append("\n    ").append(endpoint.getName()).append("(");
                 if (endpoint.getBody() != null) {
                     String bodyType = TypeWriter.printType(endpoint.getBody(), context);
-                    urlBody = bodyType.substring(0, 1).toLowerCase() + bodyType.substring(1);
+                    urlBody = "body";
                     body.append(urlBody).append(": ").append(bodyType);
                     typeScriptFile.addImport(endpoint.getBody(), context);
                     if (paramCount > 0 || argsCount > 0) {
