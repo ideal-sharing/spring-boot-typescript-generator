@@ -1,6 +1,5 @@
 package frontend.api.angular;
 
-import com.google.common.base.CaseFormat;
 import frontend.TypeScriptFile;
 import frontend.api.EndpointWriter;
 import frontend.types.TypeWriter;
@@ -8,11 +7,7 @@ import lombok.RequiredArgsConstructor;
 import model.Endpoint;
 import model.TypeContext;
 import model.types.Field;
-import model.validation.Strings;
-
-import java.lang.reflect.Array;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class AngularWriter implements EndpointWriter {
