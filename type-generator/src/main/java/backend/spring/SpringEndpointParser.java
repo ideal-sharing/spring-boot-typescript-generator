@@ -1,11 +1,14 @@
 package backend.spring;
 
+import annotations.queries.PageParam;
+import annotations.queries.PagedQuery;
 import backend.EndPointParser;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.bytecode.LocalVariableAttribute;
 import javassist.bytecode.MethodInfo;
 import lombok.SneakyThrows;
+import model.PagedEndpoint;
 import model.TypeContext;
 import model.Endpoint;
 import backend.TypeParser;
@@ -14,6 +17,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -141,6 +145,18 @@ public class SpringEndpointParser implements EndPointParser {
                     Field field = new Field(variableName, typeParser.parseType(argTypes.get(i)));
                     field.setRequired(requestParam.required());
                     endpoint.getParams().add(field);
+
+                    if(Arrays.stream(method.getParameterAnnotations()[i]).anyMatch(a -> a instanceof PageParam)) {
+                        if(endpoint instanceof PagedEndpoint pe) {
+                            if(pe.getPageVariable() == null) {
+                                pe.setPageVariable(field);
+                            } else {
+                                System.err.println("Multiple page variables defined in endpoint " + endpoint.getClassName() + "." + endpoint.getName());
+                            }
+                        } else {
+                            System.err.println("Unused @PageParam annotation encountered in " + endpoint.getClassName() + "." + endpoint.getName());
+                        }
+                    }
                 } else if(annotation instanceof PathVariable) {
                     endpoint.getUrlArgs().add(new Field(variableName, typeParser.parseType(argTypes.get(i))));
                 } else if(annotation instanceof RequestBody) {
@@ -148,6 +164,9 @@ public class SpringEndpointParser implements EndPointParser {
                     setNeedsValidation(endpoint.getBody());
                 }
             }
+        }
+        if(endpoint instanceof PagedEndpoint pe && pe.getPageVariable() == null) {
+            throw new RuntimeException("Encountered Paged endpoint without a page variable for endpoint " + endpoint.getClassName() + "." + endpoint.getName());
         }
     }
 
@@ -172,9 +191,21 @@ public class SpringEndpointParser implements EndPointParser {
         }
     }
 
+    @SneakyThrows
     private Endpoint endpoint(CtMethod method, String prefix, HttpMethod httpMethod, String className, String path) {
         String url = prefix + (path != null ? path : "");
-        Endpoint endpoint = new Endpoint(className, method.getName(), url, httpMethod, typeParser.parseType(method));
+        Endpoint endpoint;
+        if(method.getAnnotation(PagedQuery.class) != null) {
+            if(httpMethod.equals(HttpMethod.GET)) {
+                endpoint = new PagedEndpoint(className, method.getName(), url, httpMethod, typeParser.parseType(method));
+            } else {
+                System.err.println("Only GET Methods may be paged in " + className + "." + method.getName());
+                endpoint = new Endpoint(className, method.getName(), url, httpMethod, typeParser.parseType(method));
+            }
+        } else {
+            endpoint = new Endpoint(className, method.getName(), url, httpMethod, typeParser.parseType(method));
+        }
+
         parseArgs(method, endpoint);
         return endpoint;
     }

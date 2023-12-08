@@ -37,7 +37,7 @@ public class TypeScriptFile {
                 imp.append(defaultImport);
             }
 
-            if(imports != null && imports.size() > 0) {
+            if(imports != null && !imports.isEmpty()) {
                 if(defaultImport != null) {
                     imp.append(", ");
                 }
@@ -62,7 +62,7 @@ public class TypeScriptFile {
             for (Import imp : imports) {
                 writer.write(imp.toString());
             }
-            if(imports.size() > 0) {
+            if(!imports.isEmpty()) {
                 writer.write("\n");
             }
 

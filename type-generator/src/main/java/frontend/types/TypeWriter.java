@@ -1,14 +1,13 @@
 package frontend.types;
 
 import frontend.TypeScriptFile;
-import lombok.AllArgsConstructor;
 import model.TypeContext;
 import model.types.*;
 
 import java.util.List;
 
 public interface TypeWriter {
-    public static String TYPE_DECLARATIONS_DIR = "types";
+    String TYPE_DECLARATIONS_DIR = "types";
 
     /**
      * Creates a typescript representation of all types in a {@link TypeContext}. Each generated typescript file default

@@ -9,7 +9,6 @@ import javassist.Modifier;
 import lombok.SneakyThrows;
 import model.TypeContext;
 import model.types.*;
-import model.validation.Arrays;
 import model.validation.Numbers;
 import model.validation.Strings;
 import model.validation.Validation;
@@ -206,11 +205,11 @@ public class SpringTypeParser implements TypeParser {
             }
             if(annotation instanceof jakarta.validation.constraints.Size ann) {
                 if(ann.min() != Integer.MIN_VALUE) {
-                    validations.add(new Arrays.MinLength(ann.min(), ann.message()));
+                    validations.add(new model.validation.Arrays.MinLength(ann.min(), ann.message()));
                 }
 
                 if(ann.max() != Integer.MAX_VALUE) {
-                    validations.add(new Arrays.MaxLength(ann.max(), ann.message()));
+                    validations.add(new model.validation.Arrays.MaxLength(ann.max(), ann.message()));
                 }
             }
             if(annotation instanceof jakarta.validation.constraints.NotBlank ann) {

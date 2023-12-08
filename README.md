@@ -58,7 +58,7 @@ A boolean that specifies whether Typescript `Date` or `string` (for durther use 
 
 | Option        | Description                                                    | Possible Values         | 
 |---------------|----------------------------------------------------------------|-------------------------|
-| backend       | Which backend should be used                                   | spring                  |
+| backend       | Which backend should be used                                   | `Spring`                |
 | frontendAPI   | For which frontend framework should the interface be generated | `Angular`, `ReactQuery` |
 | frontendTypes | What type model should be used for the Frontend                | `Typescript`, `Zod`     |
 

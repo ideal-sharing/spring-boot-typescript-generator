@@ -65,7 +65,7 @@ public class TypeGeneratorMojo extends AbstractMojo {
             throw new MojoExecutionException("Output directory must not be empty");
         }
         try {
-            if (subModules == null || subModules.equals("")) {
+            if (subModules == null || subModules.isEmpty()) {
                 classFiles.addAll(getClassFiles(new File(project.getBuild().getOutputDirectory()), project.getBuild().getOutputDirectory() + "/"));
                 classPool.insertClassPath(project.getBuild().getOutputDirectory());
             } else {

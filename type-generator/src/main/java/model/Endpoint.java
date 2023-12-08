@@ -2,6 +2,7 @@ package model;
 
 import lombok.Data;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import model.types.Field;
 import model.types.Type;
 import org.springframework.http.HttpMethod;
@@ -11,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Data
+@RequiredArgsConstructor
 public class Endpoint {
      @NonNull
      private String className;

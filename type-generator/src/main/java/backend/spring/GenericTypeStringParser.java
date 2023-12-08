@@ -27,7 +27,7 @@ public class GenericTypeStringParser {
     private List<Intermediate> parseGenericArgs(int level) {
         List<Intermediate> types = new ArrayList<>();
 
-        while (current.trim().length() > 0 && !current.startsWith(">;")) {
+        while (!current.trim().isEmpty() && !current.startsWith(">;")) {
             types.add(consumeNext(level));
         }
 

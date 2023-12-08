@@ -4,6 +4,7 @@ import frontend.api.EndpointWriter;
 import frontend.types.TypeWriter;
 import frontend.TypeScriptFile;
 import lombok.RequiredArgsConstructor;
+import model.PagedEndpoint;
 import model.TypeContext;
 import model.Endpoint;
 import model.types.*;
@@ -41,6 +42,10 @@ public class ReactQueryWriter implements EndpointWriter {
                 reactQueryImport.getImports().addAll(Set.of("useQuery", "UseQueryOptions"));
             }
 
+            if(classEndpoints.stream().anyMatch(e -> e.getHttpMethod().equals(HttpMethod.GET) && e instanceof PagedEndpoint)) {
+                reactQueryImport.getImports().addAll(Set.of("useInfiniteQuery", "UseInfiniteQueryOptions"));
+            }
+
             if(classEndpoints.stream().anyMatch(e -> !e.getHttpMethod().equals(HttpMethod.GET))) {
                 reactQueryImport.getImports().addAll(Set.of("useMutation", "UseMutationOptions"));
             }
@@ -68,7 +73,11 @@ public class ReactQueryWriter implements EndpointWriter {
 
     private String printEndPoint(Endpoint endpoint) {
         if(endpoint.getHttpMethod().equals(HttpMethod.GET)){
-            return printQuery(endpoint);
+            if(endpoint instanceof PagedEndpoint pagedEndpoint) {
+                return printInfiniteQuery(pagedEndpoint);
+            } else {
+                return printQuery(endpoint);
+            }
         } else {
             return printMutation(endpoint);
         }
@@ -111,6 +120,44 @@ public class ReactQueryWriter implements EndpointWriter {
         }
         method.append(");\n");
 
+        method.append("      return response.data;\n");
+        method.append("    }, options),\n");
+        method.append("  };\n\n");
+        return method.toString();
+    }
+
+    private String printInfiniteQuery(PagedEndpoint endpoint) {
+        String key = endpoint.getClassName() + "_" + endpoint.getName();
+        List<Field> sortedParams = endpoint.getAllVariables().stream().filter(field -> field != endpoint.getPageVariable()).toList();
+
+        String returnType = "<" + TypeWriter.printType(endpoint.getReturnType(), context) + ">";
+
+        String args = getFnParams(sortedParams);
+        if(!args.isEmpty()) {
+            args += ", ";
+        }
+        args += "options?: Omit<Omit<UseInfiniteQueryOptions" + returnType + ", 'queryKey'>, 'queryFn'>";
+
+        StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n    useInfiniteQuery: (" + args + ") => useInfiniteQuery" + returnType + "(");
+
+        method.append("['").append(key).append("'");
+        if(!sortedParams.isEmpty()) {
+            method.append(", ").append(String.join(", ", sortedParams.stream().map(Field::getName).toList()));
+        }
+        method.append("], ");
+
+        method.append("async ({ pageParam = 0 }) => {\n");
+        method.append("      const response = await axios.").append(endpoint.getHttpMethod().name().toLowerCase()).append(returnType);
+        method.append("(").append(formatUrl(endpoint));
+
+        List<Field> params = endpoint.getParams().stream().filter(field -> field != endpoint.getPageVariable()).toList();
+        if(!params.isEmpty()) {
+            method.append(", { params: ")
+                    .append(printParams(params).replace("}", ", " + endpoint.getPageVariable().getName() + ": pageParam }}"));
+        } else {
+            method.append(", { params: { ").append(endpoint.getPageVariable().getName()).append(": pageParam }}");
+        }
+        method.append(");\n");
         method.append("      return response.data;\n");
         method.append("    }, options),\n");
         method.append("  };\n\n");
@@ -185,17 +232,5 @@ public class ReactQueryWriter implements EndpointWriter {
         }).collect(Collectors.joining(", "));
         s += "}";
         return s;
-    }
-
-    private String getCollectionName(Type type) {
-        if(type instanceof ArrayType arr) {
-            return getCollectionName(arr.getSubType());
-        }
-
-        if(type instanceof NamedType named) {
-            return named.getName();
-        }
-
-        return "";
     }
 }
