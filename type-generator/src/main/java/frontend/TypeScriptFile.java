@@ -41,7 +41,7 @@ public class TypeScriptFile {
                 if(defaultImport != null) {
                     imp.append(", ");
                 }
-                imp.append("{ ").append(String.join(", ", imports)).append(" }");
+                imp.append("{ ").append(String.join(", ", imports.stream().sorted().toList())).append(" }");
             }
 
             imp.append(" from '").append(location).append("';\n");
