@@ -102,8 +102,8 @@ public class ReactQueryWriter implements EndpointWriter {
         args += "options?: Omit<UseMutationOptions" + genericParams + ", 'mutationFn'>";
 
         StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n    useMutation: (" + args + ") => ");
-        method.append("useMutation").append(genericParams).append("(");
-        method.append("async (");
+        method.append("useMutation").append(genericParams).append("({");
+        method.append(" mutationFn: async (");
         if(endpoint.getBody() != null) {
             method.append("data: ").append(TypeWriter.printType(endpoint.getBody(), context));
         }
@@ -121,7 +121,7 @@ public class ReactQueryWriter implements EndpointWriter {
         method.append(");\n");
 
         method.append("      return response.data;\n");
-        method.append("    }, options),\n");
+        method.append("    }, ...options }),\n");
         method.append("  };\n\n");
         return method.toString();
     }
@@ -136,17 +136,17 @@ public class ReactQueryWriter implements EndpointWriter {
         if(!args.isEmpty()) {
             args += ", ";
         }
-        args += "options?: Omit<Omit<UseInfiniteQueryOptions" + returnType + ", 'queryKey'>, 'queryFn'>";
+        args += "options?: Partial<Omit<Omit<UseInfiniteQueryOptions" + returnType + ", 'select'>, 'queryFn'>>";
 
-        StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n    useInfiniteQuery: (" + args + ") => useInfiniteQuery" + returnType + "(");
+        StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n    useInfiniteQuery: (" + args + ") => useInfiniteQuery" + returnType + "({");
 
-        method.append("['").append(key).append("'");
+        method.append(" queryKey: ['").append(key).append("'");
         if(!sortedParams.isEmpty()) {
             method.append(", ").append(String.join(", ", sortedParams.stream().map(Field::getName).toList()));
         }
         method.append("], ");
 
-        method.append("async ({ pageParam = 0 }) => {\n");
+        method.append(" queryFn: async ({ pageParam = 0 }) => {\n");
         method.append("      const response = await axios.").append(endpoint.getHttpMethod().name().toLowerCase()).append(returnType);
         method.append("(").append(formatUrl(endpoint));
 
@@ -159,7 +159,12 @@ public class ReactQueryWriter implements EndpointWriter {
         }
         method.append(");\n");
         method.append("      return response.data;\n");
-        method.append("    }, options),\n");
+        method.append("    }, \n");
+        method.append("    initialPageParam: 0,\n");
+        method.append("    getNextPageParam: (lastPage, pages) => lastPage.length < ");
+        method.append(endpoint.getPageSizeVariable().getName());
+        method.append(" ? undefined : pages.length + 1, \n");
+        method.append("    ...options }),\n");
         method.append("  };\n\n");
         return method.toString();
     }
@@ -173,17 +178,17 @@ public class ReactQueryWriter implements EndpointWriter {
         if(!args.isEmpty()) {
             args += ", ";
         }
-        args += "options?: Omit<Omit<UseQueryOptions" + returnType + ", 'queryKey'>, 'queryFn'>";
+        args += "options?: Partial<Omit<UseQueryOptions" + returnType + ", 'queryFn'>>";
 
-        StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n    useQuery: (" + args + ") => useQuery" + returnType + "(");
+        StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n    useQuery: (" + args + ") => useQuery" + returnType + "({");
 
-        method.append("['").append(key).append("'");
+        method.append(" queryKey: ['").append(key).append("'");
         if(!sortedParams.isEmpty()) {
             method.append(", ").append(String.join(", ", sortedParams.stream().map(Field::getName).toList()));
         }
         method.append("], ");
 
-        method.append("async (");
+        method.append("queryFn: async (");
         method.append(") => {\n");
         method.append("      const response = await axios.").append(endpoint.getHttpMethod().name().toLowerCase()).append(returnType);
         method.append("(").append(formatUrl(endpoint));
@@ -192,7 +197,7 @@ public class ReactQueryWriter implements EndpointWriter {
         }
         method.append(");\n");
         method.append("      return response.data;\n");
-        method.append("    }, options),\n");
+        method.append("    }, ...options}),\n");
         method.append("  };\n\n");
         return method.toString();
     }

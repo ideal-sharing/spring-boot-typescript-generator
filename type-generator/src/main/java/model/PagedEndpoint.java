@@ -17,4 +17,6 @@ public class PagedEndpoint extends Endpoint {
      }
 
      private Field pageVariable;
+
+     private Field pageSizeVariable;
 }

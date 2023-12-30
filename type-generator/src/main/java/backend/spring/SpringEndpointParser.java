@@ -1,6 +1,7 @@
 package backend.spring;
 
 import annotations.queries.PageParam;
+import annotations.queries.PageSizeParam;
 import annotations.queries.PagedQuery;
 import backend.EndPointParser;
 import javassist.CtClass;
@@ -157,6 +158,18 @@ public class SpringEndpointParser implements EndPointParser {
                             System.err.println("Unused @PageParam annotation encountered in " + endpoint.getClassName() + "." + endpoint.getName());
                         }
                     }
+
+                    if(Arrays.stream(method.getParameterAnnotations()[i]).anyMatch(a -> a instanceof PageSizeParam)) {
+                        if(endpoint instanceof PagedEndpoint pe) {
+                            if(pe.getPageSizeVariable() == null) {
+                                pe.setPageSizeVariable(field);
+                            } else {
+                                System.err.println("Multiple page size variables defined in endpoint " + endpoint.getClassName() + "." + endpoint.getName());
+                            }
+                        } else {
+                            System.err.println("Unused @PageSizeParam annotation encountered in " + endpoint.getClassName() + "." + endpoint.getName());
+                        }
+                    }
                 } else if(annotation instanceof PathVariable) {
                     endpoint.getUrlArgs().add(new Field(variableName, typeParser.parseType(argTypes.get(i))));
                 } else if(annotation instanceof RequestBody) {
@@ -167,6 +180,10 @@ public class SpringEndpointParser implements EndPointParser {
         }
         if(endpoint instanceof PagedEndpoint pe && pe.getPageVariable() == null) {
             throw new RuntimeException("Encountered Paged endpoint without a page variable for endpoint " + endpoint.getClassName() + "." + endpoint.getName());
+        }
+
+        if(endpoint instanceof PagedEndpoint pe && pe.getPageSizeVariable() == null) {
+            throw new RuntimeException("Encountered Paged endpoint without a page size variable for endpoint " + endpoint.getClassName() + "." + endpoint.getName());
         }
     }
 
