@@ -8,6 +8,8 @@ import model.Endpoint;
 import model.TypeContext;
 import model.types.ArrayType;
 import model.types.Field;
+import model.types.PrimitiveType;
+
 import java.util.*;
 
 @RequiredArgsConstructor
@@ -146,10 +148,18 @@ public class AngularWriter implements EndpointWriter {
                 if (!param.isRequired()) {
                     paramString.append("        if (").append(param.getName()).append(") {\n    ");
                 }
-                if (param.getType() instanceof ArrayType) {
-                    paramString.append("        params = ").append(param.getName()).append(".reduce((p, item) => p.append('").append(param.getName()).append("', item), params);\n");
+                if (param.getType() instanceof ArrayType arr) {
+                    if(arr.getSubType().equals(PrimitiveType.Date) && !context.isUseStringAsDate()) {
+                        paramString.append("        params = ").append(param.getName()).append(".reduce((p, item) => p.append('").append(param.getName()).append("', item.toString()), params);\n");
+                    } else {
+                        paramString.append("        params = ").append(param.getName()).append(".reduce((p, item) => p.append('").append(param.getName()).append("', item), params);\n");
+                    }
                 } else {
-                    paramString.append("        params = params.append('").append(param.getName()).append("', ").append(param.getName()).append(");\n");
+                    if(param.getType().equals(PrimitiveType.Date) && !context.isUseStringAsDate()) {
+                        paramString.append("        params = params.append('").append(param.getName()).append("', ").append(param.getName()).append(".toString());\n");
+                    } else {
+                        paramString.append("        params = params.append('").append(param.getName()).append("', ").append(param.getName()).append(");\n");
+                    }
                 }
                 if (!param.isRequired()) {
                     paramString.append("        }\n");
