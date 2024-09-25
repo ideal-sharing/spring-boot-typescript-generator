@@ -138,8 +138,9 @@ public class ReactQueryWriter implements EndpointWriter {
         }
         args += "options?: Partial<Omit<Omit<UseInfiniteQueryOptions" + returnType + ", 'select'>, 'queryFn'>>";
 
-        StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n    useInfiniteQuery: (" + args + ") => useInfiniteQuery" + returnType + "({");
-
+        StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n");
+        method.append("    queryKey: '").append(key).append("',");
+        method.append("    useInfiniteQuery: (").append(args).append(") => useInfiniteQuery").append(returnType).append("({");
         method.append(" queryKey: ['").append(key).append("'");
         if(!sortedParams.isEmpty()) {
             method.append(", ").append(String.join(", ", sortedParams.stream().map(Field::getName).toList()));
@@ -180,8 +181,9 @@ public class ReactQueryWriter implements EndpointWriter {
         }
         args += "options?: Partial<Omit<UseQueryOptions" + returnType + ", 'queryFn'>>";
 
-        StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n    useQuery: (" + args + ") => useQuery" + returnType + "({");
-
+        StringBuilder method = new StringBuilder("  static " + endpoint.getName() + " = {\n");
+        method.append("    queryKey: '").append(key).append("',\n");
+        method.append("    useQuery: (").append(args).append(") => useQuery").append(returnType).append("({");
         method.append(" queryKey: ['").append(key).append("'");
         if(!sortedParams.isEmpty()) {
             method.append(", ").append(String.join(", ", sortedParams.stream().map(Field::getName).toList()));
