@@ -8,6 +8,7 @@ import model.Endpoint;
 import model.TypeContext;
 import model.types.ArrayType;
 import model.types.Field;
+import model.types.ObjectType;
 import model.types.PrimitiveType;
 
 import java.util.*;
@@ -79,12 +80,11 @@ public class AngularWriter implements EndpointWriter {
     private StringBuilder buildEndpoint(TypeScriptFile typeScriptFile, Endpoint endpoint) {
         StringBuilder endpointString = new StringBuilder();
 
-        int paramCount = endpoint.getParams().size();
         String returnType = TypeWriter.printType(endpoint.getReturnType(), context);
         String urlBody = endpoint.getBody() != null ? "body" : "null";
 
         endpointString.append("\n    ").append(endpoint.getName()).append("(");
-        endpointString.append(buildEndpointInputs(typeScriptFile, endpoint, paramCount));
+        endpointString.append(buildEndpointInputs(typeScriptFile, endpoint));
         endpointString.append("): Observable<");
         endpointString.append(returnType);
         typeScriptFile.addImport(endpoint.getReturnType(), context);
@@ -98,39 +98,30 @@ public class AngularWriter implements EndpointWriter {
         if (!httpMethod.equals("get") && !httpMethod.equals("delete")) {
             endpointString.append(urlBody).append(", ");
         }
+        int paramCount = endpoint.getParams().size();
         endpointString.append("{ headers").append(paramCount > 0 ? ", params" : "").append(" });\n    }\n");
 
         return endpointString;
     }
 
-    private StringBuilder buildEndpointInputs(TypeScriptFile typeScriptFile, Endpoint endpoint, int paramCount) {
+    private StringBuilder buildEndpointInputs(TypeScriptFile typeScriptFile, Endpoint endpoint) {
         StringBuilder endpointInputs = new StringBuilder();
 
-        int argsCount = endpoint.getUrlArgs().size();
+        List<Field> params = endpoint.getAllVariables();
         if (endpoint.getBody() != null) {
             String bodyType = TypeWriter.printType(endpoint.getBody(), context);
             endpointInputs.append("body").append(": ").append(bodyType);
             typeScriptFile.addImport(endpoint.getBody(), context);
-            if (paramCount > 0 || argsCount > 0) {
+            if (!params.isEmpty()) {
                 endpointInputs.append(", ");
             }
         }
-        if (!endpoint.getUrlArgs().isEmpty()) {
-            for (int i = 0; i < argsCount; i++) {
-                Field arg = endpoint.getUrlArgs().get(i);
+        if (!endpoint.getAllVariables().isEmpty()) {
+            for (int i = 0; i < params.size(); i++) {
+                Field arg = endpoint.getAllVariables().get(i);
                 endpointInputs.append(arg.getName()).append(arg.isRequired() ? ": " : "?: ").append(TypeWriter.printType(arg.getType(), context));
                 typeScriptFile.addImport(arg.getType(), context);
-                if (((argsCount - 1) != i) || ((argsCount - 1) == i && paramCount != 0)) {
-                    endpointInputs.append(", ");
-                }
-            }
-        }
-        if (!endpoint.getParams().isEmpty()) {
-            for (int i = 0; i < paramCount; i++) {
-                Field param = endpoint.getParams().get(i);
-                endpointInputs.append(param.getName()).append(param.isRequired() ? ": " : "?: ").append(TypeWriter.printType(param.getType(), context));
-                typeScriptFile.addImport(param.getType(), context);
-                if ((paramCount - 1) != i) {
+                if (((params.size() - 1) != i)) {
                     endpointInputs.append(", ");
                 }
             }
@@ -143,22 +134,31 @@ public class AngularWriter implements EndpointWriter {
         StringBuilder paramString = new StringBuilder();
 
         paramString.append("        let params = new HttpParams();\n");
+        paramString.append(buildParamsRec(params, ""));
+
+        return paramString;
+    }
+
+    private StringBuilder buildParamsRec(List<Field> params, String objectPrefix) {
+        StringBuilder paramString = new StringBuilder();
         for (Field param : params) {
-            if (!param.getType().toString().contains("ObjectType")) {
+            if (param.getType() instanceof ObjectType objectParam) {
+                paramString.append(buildParamsRec(objectParam.getFields(), objectPrefix + param.getName() + "."));
+            } else {
                 if (!param.isRequired()) {
-                    paramString.append("        if (").append(param.getName()).append(") {\n    ");
+                    paramString.append("        if (").append(objectPrefix).append(param.getName()).append(") {\n    ");
                 }
                 if (param.getType() instanceof ArrayType arr) {
                     if(arr.getSubType().equals(PrimitiveType.Date) && !context.isUseStringAsDate()) {
-                        paramString.append("        params = ").append(param.getName()).append(".reduce((p, item) => p.append('").append(param.getName()).append("', item.toString()), params);\n");
+                        paramString.append("        params = ").append(objectPrefix).append(param.getName()).append(".reduce((p, item) => p.append('").append(objectPrefix).append(param.getName()).append("', item.toString()), params);\n");
                     } else {
-                        paramString.append("        params = ").append(param.getName()).append(".reduce((p, item) => p.append('").append(param.getName()).append("', item), params);\n");
+                        paramString.append("        params = ").append(objectPrefix).append(param.getName()).append(".reduce((p, item) => p.append('").append(objectPrefix).append(param.getName()).append("', item), params);\n");
                     }
                 } else {
                     if(param.getType().equals(PrimitiveType.Date) && !context.isUseStringAsDate()) {
-                        paramString.append("        params = params.append('").append(param.getName()).append("', ").append(param.getName()).append(".toString());\n");
+                        paramString.append("        params = params.append('").append(objectPrefix).append(param.getName()).append("', ").append(objectPrefix).append(param.getName()).append(".toString());\n");
                     } else {
-                        paramString.append("        params = params.append('").append(param.getName()).append("', ").append(param.getName()).append(");\n");
+                        paramString.append("        params = params.append('").append(objectPrefix).append(param.getName()).append("', ").append(objectPrefix).append(param.getName()).append(");\n");
                     }
                 }
                 if (!param.isRequired()) {
