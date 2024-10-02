@@ -134,31 +134,37 @@ public class AngularWriter implements EndpointWriter {
         StringBuilder paramString = new StringBuilder();
 
         paramString.append("        let params = new HttpParams();\n");
-        paramString.append(buildParamsRec(params, ""));
+        paramString.append(buildParamsRec(params, new ArrayList<>()));
 
         return paramString;
     }
 
-    private StringBuilder buildParamsRec(List<Field> params, String objectPrefix) {
+    private StringBuilder buildParamsRec(List<Field> params, List<String> objectPath) {
         StringBuilder paramString = new StringBuilder();
         for (Field param : params) {
             if (param.getType() instanceof ObjectType objectParam) {
-                paramString.append(buildParamsRec(objectParam.getFields(), objectPrefix + param.getName() + "."));
+                ArrayList<String> newPath = new ArrayList<>(objectPath);
+                newPath.add(param.getName());
+                paramString.append(buildParamsRec(objectParam.getFields(), newPath));
             } else {
+                String paramPrefix = objectPath.size() > 1 ? String.join(".", objectPath.subList(1, objectPath.size())) + "." : "";
+                String objectPrefix = !objectPath.isEmpty() ? String.join(".", objectPath) + "." : "";
+
                 if (!param.isRequired()) {
                     paramString.append("        if (").append(objectPrefix).append(param.getName()).append(") {\n    ");
                 }
+
                 if (param.getType() instanceof ArrayType arr) {
                     if(arr.getSubType().equals(PrimitiveType.Date) && !context.isUseStringAsDate()) {
-                        paramString.append("        params = ").append(objectPrefix).append(param.getName()).append(".reduce((p, item) => p.append('").append(objectPrefix).append(param.getName()).append("', item.toString()), params);\n");
+                        paramString.append("        params = ").append(objectPrefix).append(param.getName()).append(".reduce((p, item) => p.append('").append(paramPrefix).append(param.getName()).append("', item.toString()), params);\n");
                     } else {
-                        paramString.append("        params = ").append(objectPrefix).append(param.getName()).append(".reduce((p, item) => p.append('").append(objectPrefix).append(param.getName()).append("', item), params);\n");
+                        paramString.append("        params = ").append(objectPrefix).append(param.getName()).append(".reduce((p, item) => p.append('").append(paramPrefix).append(param.getName()).append("', item), params);\n");
                     }
                 } else {
                     if(param.getType().equals(PrimitiveType.Date) && !context.isUseStringAsDate()) {
-                        paramString.append("        params = params.append('").append(objectPrefix).append(param.getName()).append("', ").append(objectPrefix).append(param.getName()).append(".toString());\n");
+                        paramString.append("        params = params.append('").append(paramPrefix).append(param.getName()).append("', ").append(objectPrefix).append(param.getName()).append(".toString());\n");
                     } else {
-                        paramString.append("        params = params.append('").append(objectPrefix).append(param.getName()).append("', ").append(objectPrefix).append(param.getName()).append(");\n");
+                        paramString.append("        params = params.append('").append(paramPrefix).append(param.getName()).append("', ").append(objectPrefix).append(param.getName()).append(");\n");
                     }
                 }
                 if (!param.isRequired()) {
