@@ -14,7 +14,7 @@ After installation ad the Plugin to your `pom.xml`:
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>ch.ideal</groupId>
+                    <groupId>ch.ideal-sharing</groupId>
                     <artifactId>type-generator</artifactId>
                     <version>1.0-SNAPSHOT</version>
                     <inherited>false</inherited>
@@ -62,3 +62,6 @@ A boolean that specifies whether Typescript `Date` or `string` (for durther use 
 | frontendAPI   | For which frontend framework should the interface be generated | `Angular`, `ReactQuery` |
 | frontendTypes | What type model should be used for the Frontend                | `Typescript`, `Zod`     |
 
+# Credits
+
+Done in proud collaboration with [Adibilis GmbH](https://www.adibilis.ch/).
